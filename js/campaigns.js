@@ -15,10 +15,11 @@
 
   // ── API HELPER ──────────────────────────────────────────────────
   const api = async (endpoint, method = 'GET', body = null) => {
+    const token = Auth.getToken();
     const opts = {
       method,
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
     };
     if (body) opts.body = JSON.stringify(body);
     const r = await fetch(`${CONFIG.API_BASE}/${endpoint}`, opts);

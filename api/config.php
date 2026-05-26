@@ -141,3 +141,52 @@ function require_participant(string $campaign_id): array {
     }
     return $user;
 }
+
+// ── Helper: leggi Bearer token dall'header Authorization ──────────────────
+function get_bearer_token(): ?string {
+    $header = $_SERVER['HTTP_AUTHORIZATION']
+           ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+           ?? '';
+    if (preg_match('/Bearer\s+(.+)/i', $header, $m)) return $m[1];
+    return null;
+}
+
+// ── Helper: verifica JWT con Supabase e ritorna utente ────────────────────
+function get_user_from_token(): ?array {
+    $token = get_bearer_token();
+    if (!$token) return null;
+
+    $ch = curl_init(SB_URL . '/auth/v1/user');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER     => [
+            'apikey: ' . SB_ANON_KEY,
+            'Authorization: Bearer ' . $token,
+        ],
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) return null;
+    $data = json_decode($response, true);
+    if (empty($data['id'])) return null;
+
+    // Recupera username dal profilo
+    $profile = sb_request("/rest/v1/users?id=eq.{$data['id']}&select=username,avatar_url");
+    $username = $profile['data'][0]['username'] ?? 'Unknown';
+
+    return [
+        'id'       => $data['id'],
+        'email'    => $data['email'],
+        'username' => $username,
+    ];
+}
+
+// ── Aggiorna require_auth per usare JWT ────────────────────────────────────
+function require_auth(): array {
+    $user = get_user_from_token();
+    if (!$user) err('Non autenticato.', 401);
+    return $user;
+}
