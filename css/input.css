@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { @apply bg-shadow-grey-400 text-floral-white font-body; }
+  h1,h2,h3,h4 { @apply font-heading; }
+}
+
+@layer components {
+  /* ── Grain texture overlay ── */
+  .grain::after {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: .035;
+  }
+
+  /* ── Ornamental divider ── */
+  .ornament {
+    @apply flex items-center gap-4 text-oxblood-600;
+  }
+  .ornament::before, .ornament::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, #92140c 40%, #92140c 60%, transparent);
+  }
+
+  /* ── Btn primary ── */
+  .btn-primary {
+    @apply font-heading tracking-widest uppercase text-sm px-6 py-3
+           bg-oxblood text-floral-white border border-oxblood-600
+           hover:bg-oxblood-600 hover:border-oxblood-700
+           transition-all duration-200 relative overflow-hidden;
+  }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.06) 0%, transparent 60%);
+  }
+
+  /* ── Btn ghost ── */
+  .btn-ghost {
+    @apply font-heading tracking-widest uppercase text-sm px-6 py-3
+           bg-transparent text-floral-white-400 border border-shadow-grey-600
+           hover:border-oxblood-600 hover:text-floral-white
+           transition-all duration-200;
+  }
+
+  /* ── Panel card ── */
+  .panel {
+    @apply bg-shadow-grey-400 border border-shadow-grey-600
+           relative overflow-hidden;
+  }
+  .panel::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(135deg, rgba(146,20,12,.05) 0%, transparent 50%);
+  }
+
+  /* ── Form input ── */
+  .field {
+    @apply w-full bg-shadow-grey-300 border border-shadow-grey-600
+           text-floral-white font-body text-base px-4 py-3
+           placeholder-shadow-grey-700
+           focus:outline-none focus:border-oxblood-600
+           transition-colors duration-200;
+  }
+
+  /* ── Badge ── */
+  .badge-active   { @apply text-xs font-heading tracking-wider uppercase px-2 py-0.5 bg-oxblood-200 text-oxblood-700 border border-oxblood-400; }
+  .badge-inactive { @apply text-xs font-heading tracking-wider uppercase px-2 py-0.5 bg-shadow-grey-300 text-shadow-grey-700 border border-shadow-grey-600; }
+}

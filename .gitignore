@@ -1,0 +1,17 @@
+# ── Dipendenze Node ────────────────────────────────────────────
+node_modules/
+
+# ── Tailwind output (generato dal build) ──────────────────────
+css/style.css
+
+# ── OS e IDE ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.user
+
+# ── Log e temp ────────────────────────────────────────────────
+*.log
+*.tmp

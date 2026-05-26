@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MELLON FORGE — Sessione</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          'shadow-grey': { DEFAULT:'#1e1e24',100:'#060607',200:'#0c0c0e',300:'#121216',400:'#18181d',500:'#1e1e24',600:'#474754',700:'#6f6f85',800:'#9e9eae',900:'#cfcfd7' },
+          'oxblood':     { DEFAULT:'#92140c',100:'#1d0402',200:'#3a0805',300:'#580c07',400:'#751109',500:'#92140c',600:'#d31e11',700:'#ef483c',800:'#f4857d',900:'#fac2be' },
+          'floral-white':{ DEFAULT:'#fff8f0',100:'#633500',200:'#c66a00',300:'#ff9c2a',400:'#ffca8d',500:'#fff8f0',600:'#fff9f3',700:'#fffbf6',800:'#fffcf9',900:'#fffefc' }
+        },
+        fontFamily: { display:['"Cinzel Decorative"','serif'], heading:['"Cinzel"','serif'], body:['"Crimson Text"','serif'] }
+      }}
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+    html, body { height:100%; overflow:hidden; background:#060607; font-family:'Crimson Text',serif; color:#fff8f0; }
+
+    /* ── LAYOUT ── */
+    #app { display:grid; grid-template-rows:48px 1fr; grid-template-columns:260px 1fr 300px; height:100vh; }
+
+    /* Top bar */
+    #topbar { grid-column:1/-1; background:#0c0c0e; border-bottom:1px solid #1e1e24;
+              display:flex; align-items:center; gap:1rem; padding:0 1rem; }
+
+    /* Left panel */
+    #panel-left { background:#0c0c0e; border-right:1px solid #1e1e24; overflow-y:auto; display:flex; flex-direction:column; }
+
+    /* Center: canvas */
+    #canvas-area { position:relative; overflow:hidden; background:#121216; cursor:crosshair; }
+    #hex-canvas { display:block; }
+
+    /* Right panel: chat */
+    #panel-right { background:#0c0c0e; border-left:1px solid #1e1e24; display:flex; flex-direction:column; }
+
+    /* ── SECTION HEADERS ── */
+    .panel-header { padding:.5rem .75rem; border-bottom:1px solid #18181d; background:#121216;
+                    font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.15em; text-transform:uppercase;
+                    color:#6f6f85; display:flex; align-items:center; justify-content:space-between; }
+    .panel-header .icon { color:#92140c; margin-right:.4rem; }
+
+    /* ── CHARACTER CARD ── */
+    .char-card { padding:.6rem .75rem; border-bottom:1px solid #18181d; cursor:pointer; transition:background .15s; }
+    .char-card:hover { background:#121216; }
+    .char-card.selected { background:#1d0402; border-left:2px solid #92140c; }
+    .char-name { font-family:'Cinzel',serif; font-size:.75rem; letter-spacing:.05em; color:#ffca8d; }
+    .char-meta { font-size:.8rem; color:#6f6f85; margin-top:.15rem; }
+    .hp-bar { height:3px; background:#1e1e24; margin-top:.35rem; border-radius:0; }
+    .hp-fill { height:100%; background:#92140c; transition:width .3s; border-radius:0; }
+
+    /* ── DICE ROLLER ── */
+    #dice-roller { padding:.75rem; border-top:1px solid #18181d; }
+    .dice-expr {
+      width:100%; background:#121216; border:1px solid #1e1e24; color:#fff8f0;
+      font-family:'Crimson Text',serif; font-size:.9rem; padding:.4rem .6rem;
+      outline:none; margin-bottom:.5rem;
+    }
+    .dice-expr:focus { border-color:#580c07; }
+    .dice-btns { display:flex; flex-wrap:wrap; gap:.3rem; margin-bottom:.5rem; }
+    .dice-quick { font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.08em;
+                  padding:.3rem .5rem; background:#18181d; border:1px solid #1e1e24;
+                  color:#9e9eae; cursor:pointer; transition:all .15s; }
+    .dice-quick:hover { border-color:#92140c; color:#fff8f0; }
+    .roll-btn { width:100%; font-family:'Cinzel',serif; letter-spacing:.12em; text-transform:uppercase;
+                font-size:.7rem; padding:.45rem; background:#92140c; color:#fff8f0;
+                border:1px solid #d31e11; cursor:pointer; transition:background .2s; }
+    .roll-btn:hover { background:#d31e11; }
+    #roll-result { text-align:center; padding:.5rem; font-size:1.1rem; color:#ffca8d;
+                   font-family:'Cinzel',serif; min-height:2rem; }
+
+    /* ── CHAT ── */
+    #chat-messages { flex:1; overflow-y:auto; padding:.5rem; display:flex; flex-direction:column; gap:.3rem; }
+    #chat-messages::-webkit-scrollbar { width:4px; }
+    #chat-messages::-webkit-scrollbar-track { background:#0c0c0e; }
+    #chat-messages::-webkit-scrollbar-thumb { background:#1e1e24; }
+
+    .msg { padding:.4rem .6rem; border-left:2px solid transparent; font-size:.88rem; line-height:1.4; }
+    .msg .sender { font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.1rem; }
+    .msg.ooc { border-left-color:#2a2a32; }
+    .msg.ooc .sender { color:#6f6f85; }
+    .msg.ic { border-left-color:#580c07; background:rgba(29,4,2,.3); }
+    .msg.ic .sender { color:#f4857d; }
+    .msg.whisper { border-left-color:#3a0805; background:rgba(29,4,2,.5); }
+    .msg.whisper .sender { color:#ef483c; }
+    .msg.system { border-left-color:transparent; text-align:center; color:#474754; font-style:italic; font-size:.8rem; }
+    .msg.dice { border-left-color:#751109; background:rgba(29,4,2,.2); }
+    .msg.dice .dice-total { font-family:'Cinzel',serif; font-size:1.2rem; color:#ffca8d; }
+
+    /* Chat input area */
+    #chat-footer { padding:.5rem; border-top:1px solid #18181d; }
+    .chat-type-select { width:100%; background:#121216; border:1px solid #1e1e24; color:#9e9eae;
+                        font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.08em; text-transform:uppercase;
+                        padding:.3rem .5rem; outline:none; margin-bottom:.4rem; }
+    #chat-input { width:100%; background:#121216; border:1px solid #1e1e24; color:#fff8f0;
+                  font-family:'Crimson Text',serif; font-size:.9rem; padding:.4rem .6rem;
+                  outline:none; resize:none; height:52px; }
+    #chat-input:focus { border-color:#580c07; }
+    #chat-send { width:100%; font-family:'Cinzel',serif; letter-spacing:.12em; text-transform:uppercase;
+                 font-size:.65rem; padding:.35rem; background:#18181d; color:#9e9eae;
+                 border:1px solid #1e1e24; cursor:pointer; margin-top:.4rem; transition:all .15s; }
+    #chat-send:hover { background:#92140c; color:#fff8f0; border-color:#d31e11; }
+
+    /* GM Controls */
+    #gm-controls { padding:.6rem .75rem; border-bottom:1px solid #18181d; display:none; }
+    #gm-controls.visible { display:block; }
+    .gm-btn { font-family:'Cinzel',serif; letter-spacing:.1em; text-transform:uppercase; font-size:.65rem;
+              padding:.35rem .7rem; background:#1d0402; color:#f4857d; border:1px solid #3a0805;
+              cursor:pointer; margin-right:.4rem; margin-bottom:.4rem; transition:all .15s; }
+    .gm-btn:hover { background:#580c07; color:#fff8f0; }
+
+    /* Topbar elements */
+    .session-title { font-family:'Cinzel',serif; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; color:#9e9eae; }
+    .session-active { display:flex; align-items:center; gap:.4rem; font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; }
+    .dot-live { width:6px; height:6px; border-radius:50%; background:#d31e11; box-shadow:0 0 6px rgba(211,30,17,.7); animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 6px rgba(211,30,17,.7);}50%{box-shadow:0 0 12px rgba(211,30,17,.9);} }
+
+    /* HUD coords */
+    #hex-coords { position:absolute; bottom:.5rem; left:.5rem; font-family:'Cinzel',serif; font-size:.65rem;
+                  letter-spacing:.1em; color:#474754; pointer-events:none; }
+
+    /* Selected hex highlight shown via canvas */
+    #canvas-toolbar { position:absolute; top:.5rem; left:.5rem; display:flex; gap:.3rem; }
+    .canvas-tool { font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase;
+                   padding:.35rem .6rem; background:rgba(12,12,14,.85); border:1px solid #1e1e24;
+                   color:#6f6f85; cursor:pointer; transition:all .15s; }
+    .canvas-tool.active,
+    .canvas-tool:hover { border-color:#92140c; color:#fff8f0; background:rgba(29,4,2,.7); }
+
+    /* Scrollbars */
+    #panel-left::-webkit-scrollbar { width:4px; }
+    #panel-left::-webkit-scrollbar-track { background:#0c0c0e; }
+    #panel-left::-webkit-scrollbar-thumb { background:#1e1e24; }
+
+    /* Fog toggle */
+    .fog-indicator { position:absolute; top:.5rem; right:.5rem; font-family:'Cinzel',serif;
+                     font-size:.6rem; letter-spacing:.1em; text-transform:uppercase;
+                     padding:.25rem .6rem; background:rgba(29,4,2,.8); border:1px solid #580c07;
+                     color:#f4857d; pointer-events:none; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── TOPBAR ── -->
+  <div id="topbar">
+    <a href="campaigns.html" title="Torna alle campagne" style="color:#474754; font-size:1rem; text-decoration:none; margin-right:.5rem;" class="hover:text-oxblood-700 transition-colors font-display text-xs">HB</a>
+    <div style="width:1px;height:20px;background:#1e1e24;"></div>
+    <span class="session-title" id="session-name">Caricamento…</span>
+    <div class="session-active ml-2">
+      <div class="dot-live"></div>
+      <span style="color:#d31e11;">Live</span>
+    </div>
+    <div style="flex:1;"></div>
+    <!-- GM: End session -->
+    <button id="btn-end-session" class="gm-btn hidden" onclick="Game.endSession()">⬡ Chiudi Sessione</button>
+    <span id="topbar-user" style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:#474754;"></span>
+  </div>
+
+  <!-- ── LEFT PANEL ── -->
+  <div id="panel-left">
+
+    <!-- Characters -->
+    <div class="panel-header"><span><span class="icon">⚔</span>Personaggi</span></div>
+    <div id="char-list">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- GM Controls -->
+    <div id="gm-controls">
+      <div class="panel-header" style="border-bottom:none;padding:0 0 .5rem 0;"><span><span class="icon">◆</span>GM Controls</span></div>
+      <button class="gm-btn" onclick="Game.toggleFog()">Fog of War</button>
+      <button class="gm-btn" onclick="Game.clearFog()">Rivela Tutto</button>
+      <button class="gm-btn" onclick="Game.addNPCToken()">+ NPC Token</button>
+    </div>
+
+    <!-- Spacer -->
+    <div style="flex:1;"></div>
+
+    <!-- Dice Roller -->
+    <div class="panel-header"><span><span class="icon">🎲</span>Tiro Dadi</span></div>
+    <div id="dice-roller">
+      <div class="dice-btns">
+        <button class="dice-quick" onclick="setDiceExpr('1d4')">d4</button>
+        <button class="dice-quick" onclick="setDiceExpr('1d6')">d6</button>
+        <button class="dice-quick" onclick="setDiceExpr('1d8')">d8</button>
+        <button class="dice-quick" onclick="setDiceExpr('1d10')">d10</button>
+        <button class="dice-quick" onclick="setDiceExpr('1d12')">d12</button>
+        <button class="dice-quick" onclick="setDiceExpr('1d20')">d20</button>
+        <button class="dice-quick" onclick="setDiceExpr('1d100')">d100</button>
+        <button class="dice-quick" onclick="setDiceExpr('2d6')">2d6</button>
+      </div>
+      <input type="text" class="dice-expr" id="dice-expr-input" placeholder="es. 2d6+3" value="1d20">
+      <div style="display:flex;gap:.4rem;margin-bottom:.5rem;">
+        <input type="text" id="dice-reason" class="dice-expr" placeholder="Motivo (opz.)" style="flex:1;margin-bottom:0;">
+        <label style="display:flex;align-items:center;gap:.3rem;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;color:#6f6f85;cursor:pointer;">
+          <input type="checkbox" id="dice-private" style="accent-color:#92140c;"> Priv.
+        </label>
+      </div>
+      <button class="roll-btn" onclick="Game.rollDice()">⬡ Tira</button>
+      <div id="roll-result"></div>
+    </div>
+
+  </div>
+
+  <!-- ── CENTER: HEX MAP ── -->
+  <div id="canvas-area">
+    <canvas id="hex-canvas"></canvas>
+
+    <!-- Toolbar -->
+    <div id="canvas-toolbar">
+      <button class="canvas-tool active" id="tool-select" onclick="setTool('select')">Seleziona</button>
+      <button class="canvas-tool" id="tool-move"   onclick="setTool('move')">Muovi Token</button>
+      <button class="canvas-tool" id="tool-fog"    onclick="setTool('fog')" id="tool-fog-btn">Fog</button>
+    </div>
+
+    <div id="hex-coords">col:— row:—</div>
+    <div class="fog-indicator" id="fog-indicator" style="display:none;">FOG ATTIVO</div>
+  </div>
+
+  <!-- ── RIGHT PANEL: CHAT ── -->
+  <div id="panel-right">
+    <div class="panel-header"><span><span class="icon">💬</span>Chat Sessione</span></div>
+    <div id="chat-messages">
+      <!-- messages populated by realtime -->
+    </div>
+    <div id="chat-footer">
+      <select class="chat-type-select" id="chat-type">
+        <option value="ooc">OOC — Fuori personaggio</option>
+        <option value="ic">IC — In personaggio</option>
+        <option value="whisper">Whisper → GM</option>
+      </select>
+      <textarea id="chat-input" placeholder="Scrivi un messaggio…" onkeydown="chatKeydown(event)"></textarea>
+      <button id="chat-send" onclick="Game.sendMessage()">Invia ↵</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

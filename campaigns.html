@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MELLON FORGE — Campagne</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          'shadow-grey': { DEFAULT:'#1e1e24',100:'#060607',200:'#0c0c0e',300:'#121216',400:'#18181d',500:'#1e1e24',600:'#474754',700:'#6f6f85',800:'#9e9eae',900:'#cfcfd7' },
+          'oxblood':     { DEFAULT:'#92140c',100:'#1d0402',200:'#3a0805',300:'#580c07',400:'#751109',500:'#92140c',600:'#d31e11',700:'#ef483c',800:'#f4857d',900:'#fac2be' },
+          'floral-white':{ DEFAULT:'#fff8f0',100:'#633500',200:'#c66a00',300:'#ff9c2a',400:'#ffca8d',500:'#fff8f0',600:'#fff9f3',700:'#fffbf6',800:'#fffcf9',900:'#fffefc' }
+        },
+        fontFamily: { display:['"Cinzel Decorative"','serif'], heading:['"Cinzel"','serif'], body:['"Crimson Text"','serif'] }
+      }}
+    }
+  </script>
+  <style>
+    body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity:.04; mix-blend-mode:overlay; }
+
+    .campaign-card {
+      background:#18181d; border:1px solid #2a2a32;
+      transition:border-color .25s, transform .25s;
+      position:relative; overflow:hidden;
+    }
+    .campaign-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,transparent,#92140c,transparent);
+      opacity:0; transition:opacity .25s;
+    }
+    .campaign-card:hover { border-color:#580c07; transform:translateY(-2px); }
+    .campaign-card:hover::before { opacity:1; }
+
+    .btn-enter {
+      font-family:'Cinzel',serif; letter-spacing:.1em; text-transform:uppercase; font-size:.75rem;
+      padding:.5rem 1.25rem; background:#92140c; color:#fff8f0; border:1px solid #d31e11;
+      cursor:pointer; transition:all .2s;
+    }
+    .btn-enter:hover { background:#d31e11; }
+    .btn-enter:disabled { background:#1d0402; border-color:#3a0805; color:#580c07; cursor:not-allowed; }
+
+    .btn-create {
+      font-family:'Cinzel',serif; letter-spacing:.12em; text-transform:uppercase; font-size:.75rem;
+      padding:.6rem 1.5rem; background:transparent; color:#ffca8d; border:1px solid #474754;
+      cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:.5rem;
+    }
+    .btn-create:hover { border-color:#92140c; color:#fff8f0; }
+
+    /* Modal */
+    .modal-overlay { position:fixed; inset:0; background:rgba(6,6,7,.85); backdrop-filter:blur(4px); z-index:1000; display:none; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#18181d; border:1px solid #2a2a32; width:100%; max-width:480px; padding:2rem; box-shadow:0 32px 80px rgba(0,0,0,.8); }
+
+    .field {
+      width:100%; background:#121216; border:1px solid #2a2a32;
+      color:#fff8f0; font-family:'Crimson Text',serif; font-size:1rem;
+      padding:.75rem 1rem; outline:none; transition:border-color .2s;
+    }
+    .field:focus { border-color:#751109; }
+    .field::placeholder { color:#474754; }
+
+    .badge-active   { display:inline-block; font-size:.65rem; font-family:'Cinzel',serif; letter-spacing:.1em; text-transform:uppercase; padding:.2rem .6rem; background:#1d0402; color:#ef483c; border:1px solid #580c07; }
+    .badge-waiting  { display:inline-block; font-size:.65rem; font-family:'Cinzel',serif; letter-spacing:.1em; text-transform:uppercase; padding:.2rem .6rem; background:#121216; color:#6f6f85; border:1px solid #2a2a32; }
+    .badge-gm       { display:inline-block; font-size:.65rem; font-family:'Cinzel',serif; letter-spacing:.1em; text-transform:uppercase; padding:.2rem .6rem; background:#1d0402; color:#f4857d; border:1px solid #3a0805; }
+    .badge-player   { display:inline-block; font-size:.65rem; font-family:'Cinzel',serif; letter-spacing:.1em; text-transform:uppercase; padding:.2rem .6rem; background:#18181d; color:#6f6f85; border:1px solid #2a2a32; }
+
+    /* Pulse dot */
+    .pulse-dot { width:8px; height:8px; border-radius:50%; background:#d31e11; display:inline-block;
+                 box-shadow:0 0 6px rgba(211,30,17,.7); animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 6px rgba(211,30,17,.7);} 50%{box-shadow:0 0 14px rgba(211,30,17,.9);} }
+
+    /* Skeleton loader */
+    .skeleton { background:linear-gradient(90deg,#18181d 25%,#1e1e24 50%,#18181d 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
+    @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+    /* Nav */
+    .nav { background:rgba(6,6,7,.9); backdrop-filter:blur(12px); border-bottom:1px solid rgba(71,71,84,.3); }
+
+    #toast { position:fixed; bottom:2rem; right:2rem; z-index:2000; font-family:'Crimson Text',serif;
+             padding:.75rem 1.25rem; background:#18181d; border:1px solid #2a2a32; color:#fff8f0;
+             font-size:.9rem; transform:translateY(100px); opacity:0; transition:all .3s; }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.err { border-color:#580c07; background:#1d0402; }
+  </style>
+</head>
+<body class="min-h-screen font-body text-floral-white" style="background:#0c0c0e;">
+
+  <!-- NAV -->
+  <nav class="nav fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
+    <a href="index.html" class="font-display text-base text-floral-white hover:text-oxblood-700 transition-colors">MELLON FORGE</a>
+    <div class="flex items-center gap-4">
+      <span id="nav-username" class="font-heading text-xs tracking-wider text-shadow-grey-700 uppercase"></span>
+      <button onclick="Auth.logout()" class="font-heading text-xs tracking-wider uppercase text-shadow-grey-600 hover:text-oxblood-700 transition-colors">Esci</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="pt-24 pb-16 px-6 md:px-12 max-w-6xl mx-auto">
+
+    <!-- Header row -->
+    <div class="flex items-end justify-between mb-12">
+      <div>
+        <p class="font-heading text-xs tracking-[.3em] uppercase text-shadow-grey-600 mb-2">Le tue campagne</p>
+        <h1 class="font-heading text-3xl text-floral-white">Tavole del Destino</h1>
+      </div>
+      <button class="btn-create" onclick="openModal()">
+        <span style="font-size:1.1rem;">⬡</span> Nuova Campagna
+      </button>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="flex gap-0 mb-8 border-b border-shadow-grey-300">
+      <button id="filter-all"    class="font-heading text-xs tracking-wider uppercase px-5 py-3 border-b-2 border-oxblood text-floral-white transition-all" onclick="setFilter('all')">Tutte</button>
+      <button id="filter-gm"     class="font-heading text-xs tracking-wider uppercase px-5 py-3 border-b-2 border-transparent text-shadow-grey-700 hover:text-floral-white transition-all" onclick="setFilter('gm')">Come GM</button>
+      <button id="filter-player" class="font-heading text-xs tracking-wider uppercase px-5 py-3 border-b-2 border-transparent text-shadow-grey-700 hover:text-floral-white transition-all" onclick="setFilter('player')">Come Giocatore</button>
+    </div>
+
+    <!-- Campaign grid -->
+    <div id="campaigns-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Skeleton loaders -->
+      <div class="skeleton h-48 rounded-sm"></div>
+      <div class="skeleton h-48 rounded-sm"></div>
+      <div class="skeleton h-48 rounded-sm"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden text-center py-24">
+      <div class="text-5xl mb-6 opacity-30">⬡</div>
+      <h3 class="font-heading text-lg text-shadow-grey-700 mb-2">Nessuna campagna trovata</h3>
+      <p class="text-shadow-grey-600 text-sm mb-6">Crea la tua prima campagna o aspetta un invito dal Game Master.</p>
+      <button class="btn-create mx-auto" onclick="openModal()">Crea la prima campagna</button>
+    </div>
+
+  </main>
+
+  <!-- ── CREATE MODAL ── -->
+  <div class="modal-overlay" id="modal-create">
+    <div class="modal">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="font-heading text-lg tracking-wider text-floral-white">Nuova Campagna</h2>
+        <button onclick="closeModal()" style="color:#474754; font-size:1.2rem; cursor:pointer; background:none; border:none; color:#6f6f85;" class="hover:text-floral-white transition-colors">✕</button>
+      </div>
+
+      <form id="form-create" onsubmit="handleCreate(event)">
+        <div class="mb-5">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Titolo *</label>
+          <input type="text" id="c-title" class="field" placeholder="La Maledizione di Strahd" required maxlength="100">
+        </div>
+        <div class="mb-5">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Sistema</label>
+          <select id="c-system" class="field">
+            <option value="D&D 5e">D&D 5e</option>
+            <option value="Pathfinder 2e">Pathfinder 2e</option>
+            <option value="Alien RPG">Alien RPG</option>
+            <option value="Call of Cthulhu">Call of Cthulhu</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+        <div class="mb-6">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Descrizione</label>
+          <textarea id="c-desc" class="field" rows="3" placeholder="Una breve descrizione della campagna…" style="resize:vertical;"></textarea>
+        </div>
+
+        <p id="create-err" style="color:#ef483c;font-size:.85rem;margin-bottom:.75rem;display:none;"></p>
+
+        <div class="flex gap-3 justify-end">
+          <button type="button" onclick="closeModal()" style="font-family:'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase;font-size:.75rem;padding:.6rem 1.25rem;background:transparent;color:#6f6f85;border:1px solid #2a2a32;cursor:pointer;" class="hover:border-shadow-grey-600 transition-colors">Annulla</button>
+          <button type="submit" id="create-btn" style="font-family:'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase;font-size:.75rem;padding:.6rem 1.5rem;background:#92140c;color:#fff8f0;border:1px solid #d31e11;cursor:pointer;" class="hover:bg-oxblood-600 transition-colors">Crea Campagna</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/campaigns.js"></script>
+</body>
+</html>

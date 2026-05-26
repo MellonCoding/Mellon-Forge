@@ -1,0 +1,40 @@
+# Mellon Forge VTT — .htaccess
+
+# Abilita rewrite engine
+Options -Indexes
+RewriteEngine On
+
+# Forza HTTPS (decommentare in produzione)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# CORS per le chiamate API da JS
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# Proteggi config.php da accesso diretto
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Comprimi risorse statiche
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+# Cache risorse statiche
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css              "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/png             "access plus 1 month"
+</IfModule>
+
+# PHP settings (se il provider lo permette)
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 8M
+    php_value post_max_size 8M
+    php_value max_execution_time 30
+</IfModule>

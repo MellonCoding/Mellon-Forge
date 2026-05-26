@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MELLON FORGE — Virtual Tabletop</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN play -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'shadow-grey': { DEFAULT:'#1e1e24',100:'#060607',200:'#0c0c0e',300:'#121216',400:'#18181d',500:'#1e1e24',600:'#474754',700:'#6f6f85',800:'#9e9eae',900:'#cfcfd7' },
+            'oxblood':     { DEFAULT:'#92140c',100:'#1d0402',200:'#3a0805',300:'#580c07',400:'#751109',500:'#92140c',600:'#d31e11',700:'#ef483c',800:'#f4857d',900:'#fac2be' },
+            'floral-white':{ DEFAULT:'#fff8f0',100:'#633500',200:'#c66a00',300:'#ff9c2a',400:'#ffca8d',500:'#fff8f0',600:'#fff9f3',700:'#fffbf6',800:'#fffcf9',900:'#fffefc' }
+          },
+          fontFamily: { display:['"Cinzel Decorative"','serif'], heading:['"Cinzel"','serif'], body:['"Crimson Text"','serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Grain overlay */
+    body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity:.04; mix-blend-mode:overlay; }
+
+    /* Hero background: layered atmospheric gradients */
+    .hero-bg {
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(146,20,12,.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(146,20,12,.08) 0%, transparent 60%),
+        linear-gradient(180deg, #060607 0%, #0c0c0e 30%, #121216 60%, #18181d 100%);
+    }
+
+    /* Hex pattern SVG background */
+    .hex-pattern {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32L28 66zm0-6l22-13V19L28 6 6 19v28l22 13z' fill='none' stroke='%23474754' stroke-width='.4' opacity='.4'/%3E%3C/svg%3E");
+    }
+
+    /* Glow button */
+    .btn-glow {
+      position:relative; font-family:'Cinzel',serif; letter-spacing:.15em; text-transform:uppercase; font-size:.8rem;
+      padding:.75rem 2rem; background:#92140c; color:#fff8f0; border:1px solid #d31e11;
+      transition:all .25s; cursor:pointer; overflow:hidden;
+    }
+    .btn-glow::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.1) 0%,transparent 60%); }
+    .btn-glow:hover { background:#d31e11; box-shadow:0 0 24px rgba(211,30,17,.4), 0 0 60px rgba(146,20,12,.2); transform:translateY(-1px); }
+
+    .btn-outline {
+      font-family:'Cinzel',serif; letter-spacing:.15em; text-transform:uppercase; font-size:.8rem;
+      padding:.75rem 2rem; background:transparent; color:#ffca8d; border:1px solid #474754;
+      transition:all .25s; cursor:pointer;
+    }
+    .btn-outline:hover { border-color:#92140c; color:#fff8f0; }
+
+    /* Ornamental line */
+    .orn { display:flex; align-items:center; gap:1rem; color:#580c07; }
+    .orn::before,.orn::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,transparent,#580c07 40%,#580c07 60%,transparent); }
+
+    /* Feature card */
+    .feat-card {
+      background:#18181d; border:1px solid #2a2a32;
+      padding:2rem; position:relative; overflow:hidden;
+      transition:border-color .3s, transform .3s;
+    }
+    .feat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#92140c,transparent); opacity:0; transition:opacity .3s; }
+    .feat-card:hover { border-color:#580c07; transform:translateY(-3px); }
+    .feat-card:hover::before { opacity:1; }
+
+    /* Scroll reveal */
+    .reveal { opacity:0; transform:translateY(24px); transition:opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+
+    /* Separator diamond */
+    .diamond::before { content:'◆'; color:#92140c; margin:0 .5rem; font-size:.6rem; }
+  </style>
+</head>
+<body class="bg-shadow-grey-100 font-body text-floral-white min-h-screen overflow-x-hidden">
+
+  <!-- ── NAV ── -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4" style="background:rgba(6,6,7,.85); backdrop-filter:blur(12px); border-bottom:1px solid rgba(71,71,84,.3);">
+    <a href="index.html" class="font-display text-lg text-floral-white tracking-wider hover:text-oxblood-700 transition-colors">MELLON FORGE</a>
+    <div class="flex items-center gap-6">
+      <a href="#features" class="font-heading text-xs tracking-widest uppercase text-shadow-grey-800 hover:text-floral-white transition-colors">Funzionalità</a>
+      <a href="login.html" class="btn-outline text-xs" style="padding:.5rem 1.25rem;">Accedi</a>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero-bg hex-pattern min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20 relative">
+    <!-- Vignette bottom -->
+    <div class="absolute bottom-0 left-0 right-0 h-40 pointer-events-none" style="background:linear-gradient(to bottom,transparent,#060607);"></div>
+
+    <!-- Logo symbol -->
+    <div class="mb-10 reveal">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 4L60 20V44L32 60L4 44V20L32 4Z" stroke="#92140c" stroke-width="1.5" fill="none"/>
+        <path d="M32 14L50 24V44L32 54L14 44V24L32 14Z" stroke="#580c07" stroke-width="1" fill="none" opacity=".6"/>
+        <circle cx="32" cy="32" r="4" fill="#92140c"/>
+        <line x1="32" y1="14" x2="32" y2="28" stroke="#92140c" stroke-width="1" opacity=".7"/>
+        <line x1="32" y1="36" x2="32" y2="54" stroke="#92140c" stroke-width="1" opacity=".7"/>
+        <line x1="14" y1="24" x2="28" y2="28.5" stroke="#92140c" stroke-width="1" opacity=".7"/>
+        <line x1="36" y1="35.5" x2="50" y2="44" stroke="#92140c" stroke-width="1" opacity=".7"/>
+        <line x1="50" y1="24" x2="36" y2="28.5" stroke="#92140c" stroke-width="1" opacity=".7"/>
+        <line x1="28" y1="35.5" x2="14" y2="44" stroke="#92140c" stroke-width="1" opacity=".7"/>
+      </svg>
+    </div>
+
+    <h1 class="font-display text-5xl md:text-7xl lg:text-8xl text-floral-white leading-none mb-6 reveal" style="animation-delay:.1s; text-shadow:0 0 80px rgba(146,20,12,.3);">
+      MELLON FORGE
+    </h1>
+
+    <div class="orn w-48 mx-auto mb-6 reveal" style="animation-delay:.2s;">
+      <span class="font-heading text-xs tracking-[.3em] uppercase text-shadow-grey-700">Virtual Tabletop</span>
+    </div>
+
+    <p class="font-body text-lg md:text-xl text-floral-white-400 max-w-xl leading-relaxed mb-12 reveal" style="animation-delay:.3s;">
+      Una tavola virtuale per campagne che vivono nella memoria.<br>
+      Griglia esagonale, chat in tempo reale, dadi che rotolano nell'oscurità.
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-4 reveal" style="animation-delay:.4s;">
+      <a href="login.html?mode=register" class="btn-glow">Inizia la campagna</a>
+      <a href="login.html" class="btn-outline">Hai già un account</a>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40 reveal" style="animation-delay:.8s;">
+      <span class="font-heading text-xs tracking-widest uppercase text-shadow-grey-700">Scopri</span>
+      <div style="width:1px;height:40px;background:linear-gradient(to bottom,#580c07,transparent);"></div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ── -->
+  <section id="features" class="py-28 px-6 md:px-12 lg:px-24 relative" style="background:#0c0c0e;">
+    <div class="max-w-6xl mx-auto">
+
+      <div class="text-center mb-20 reveal">
+        <div class="orn mb-4"><span class="font-heading text-xs tracking-[.3em] uppercase text-shadow-grey-700">Funzionalità</span></div>
+        <h2 class="font-heading text-3xl md:text-4xl text-floral-white">Tutto ciò che serve al tavolo</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Feature 1 -->
+        <div class="feat-card reveal">
+          <div class="text-oxblood text-3xl mb-4">⬡</div>
+          <h3 class="font-heading text-base tracking-wider mb-3 text-floral-white">Griglia Esagonale</h3>
+          <p class="text-shadow-grey-800 text-sm leading-relaxed">Mappa interattiva con griglia hex, token trascinabili, fog of war e sfondi personalizzati. Il Game Master controlla tutto in tempo reale.</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feat-card reveal" style="transition-delay:.1s">
+          <div class="text-oxblood text-3xl mb-4">⚔</div>
+          <h3 class="font-heading text-base tracking-wider mb-3 text-floral-white">Schede Personaggio</h3>
+          <p class="text-shadow-grey-800 text-sm leading-relaxed">Statistiche complete, inventario, condizioni e punti vita sincronizzati. Importa personaggi direttamente dall'app desktop companion.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feat-card reveal" style="transition-delay:.2s">
+          <div class="text-oxblood text-3xl mb-4">🎲</div>
+          <h3 class="font-heading text-base tracking-wider mb-3 text-floral-white">Tiro Dadi Realtime</h3>
+          <p class="text-shadow-grey-800 text-sm leading-relaxed">Parser completo: <code class="text-oxblood-700 font-mono">2d6+3</code>, <code class="text-oxblood-700 font-mono">4d8</code>, <code class="text-oxblood-700 font-mono">1d20 vantaggio</code>. Tiri privati, log sessione e feed visibile a tutti.</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feat-card reveal" style="transition-delay:.1s">
+          <div class="text-oxblood text-3xl mb-4">💬</div>
+          <h3 class="font-heading text-base tracking-wider mb-3 text-floral-white">Chat di Sessione</h3>
+          <p class="text-shadow-grey-800 text-sm leading-relaxed">Canali IC (in-character) e OOC (out-of-character). Messaggi privati (whisper) al Master o a un giocatore specifico.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feat-card reveal" style="transition-delay:.2s">
+          <div class="text-oxblood text-3xl mb-4">📜</div>
+          <h3 class="font-heading text-base tracking-wider mb-3 text-floral-white">Gestione Campagne</h3>
+          <p class="text-shadow-grey-800 text-sm leading-relaxed">Crea campagne, invita giocatori, gestisci più sessioni e mappe. Il Master attiva la sessione quando è pronto — i giocatori entrano con un click.</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feat-card reveal" style="transition-delay:.3s">
+          <div class="text-oxblood text-3xl mb-4">🔄</div>
+          <h3 class="font-heading text-base tracking-wider mb-3 text-floral-white">Sincronizzazione Totale</h3>
+          <p class="text-shadow-grey-800 text-sm leading-relaxed">Powered by Supabase Realtime. Movimenti dei token, messaggi, tiri di dado: tutto aggiornato in millisecondi per tutti i partecipanti.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section class="py-28 px-6 text-center relative" style="background:radial-gradient(ellipse 80% 60% at 50% 50%, rgba(146,20,12,.12) 0%, transparent 70%), #060607;">
+    <div class="max-w-2xl mx-auto reveal">
+      <div class="orn mb-6"><span class="font-heading text-xs tracking-[.3em] uppercase text-shadow-grey-700">Inizia ora</span></div>
+      <h2 class="font-display text-4xl md:text-5xl text-floral-white mb-6 leading-tight">Il dado è tratto.<br>La campagna ti aspetta.</h2>
+      <p class="text-shadow-grey-800 mb-10">Crea il tuo account gratuitamente e porta la tua campagna al prossimo livello.</p>
+      <a href="login.html?mode=register" class="btn-glow inline-block">Crea account gratuito</a>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="py-8 px-8 border-t border-shadow-grey-300 flex items-center justify-between" style="background:#060607;">
+    <span class="font-display text-sm text-shadow-grey-600">MELLON FORGE</span>
+    <span class="font-body text-xs text-shadow-grey-600">© 2025 — VTT</span>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
+</body>
+</html>

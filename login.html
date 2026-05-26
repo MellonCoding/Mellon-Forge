@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MELLON FORGE — Accedi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          'shadow-grey': { DEFAULT:'#1e1e24',100:'#060607',200:'#0c0c0e',300:'#121216',400:'#18181d',500:'#1e1e24',600:'#474754',700:'#6f6f85',800:'#9e9eae',900:'#cfcfd7' },
+          'oxblood':     { DEFAULT:'#92140c',100:'#1d0402',200:'#3a0805',300:'#580c07',400:'#751109',500:'#92140c',600:'#d31e11',700:'#ef483c',800:'#f4857d',900:'#fac2be' },
+          'floral-white':{ DEFAULT:'#fff8f0',100:'#633500',200:'#c66a00',300:'#ff9c2a',400:'#ffca8d',500:'#fff8f0',600:'#fff9f3',700:'#fffbf6',800:'#fffcf9',900:'#fffefc' }
+        },
+        fontFamily: { display:['"Cinzel Decorative"','serif'], heading:['"Cinzel"','serif'], body:['"Crimson Text"','serif'] }
+      }}
+    }
+  </script>
+  <style>
+    body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity:.04; mix-blend-mode:overlay; }
+
+    .page-bg {
+      background:
+        radial-gradient(ellipse 50% 70% at 0% 50%, rgba(146,20,12,.1) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 50% at 100% 50%, rgba(146,20,12,.06) 0%, transparent 60%),
+        #060607;
+    }
+    .hex-bg {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32L28 66zm0-6l22-13V19L28 6 6 19v28l22 13z' fill='none' stroke='%23474754' stroke-width='.3' opacity='.25'/%3E%3C/svg%3E");
+    }
+    .panel {
+      background:#18181d; border:1px solid #2a2a32;
+      box-shadow:0 24px 80px rgba(0,0,0,.8), 0 0 0 1px rgba(146,20,12,.05);
+    }
+    .field {
+      width:100%; background:#121216; border:1px solid #2a2a32;
+      color:#fff8f0; font-family:'Crimson Text',serif; font-size:1rem;
+      padding:.75rem 1rem; outline:none;
+      transition:border-color .2s;
+    }
+    .field:focus { border-color:#751109; }
+    .field::placeholder { color:#474754; }
+    .btn-primary {
+      width:100%; font-family:'Cinzel',serif; letter-spacing:.15em; text-transform:uppercase; font-size:.8rem;
+      padding:.85rem; background:#92140c; color:#fff8f0; border:1px solid #d31e11;
+      cursor:pointer; transition:all .2s; position:relative; overflow:hidden;
+    }
+    .btn-primary:hover { background:#d31e11; box-shadow:0 0 24px rgba(211,30,17,.35); }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+    .tab { font-family:'Cinzel',serif; font-size:.75rem; letter-spacing:.15em; text-transform:uppercase;
+           padding:.6rem 2rem; cursor:pointer; border-bottom:2px solid transparent; color:#6f6f85; transition:all .2s; }
+    .tab.active { color:#fff8f0; border-color:#92140c; }
+    .err { color:#ef483c; font-size:.85rem; font-family:'Crimson Text',serif; margin-top:.5rem; display:none; }
+    .err.show { display:block; }
+    .orn { display:flex; align-items:center; gap:.75rem; }
+    .orn::before,.orn::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,transparent,#2a2a32 40%,#2a2a32 60%,transparent); }
+  </style>
+</head>
+<body class="page-bg hex-bg min-h-screen flex items-center justify-center px-4 font-body text-floral-white">
+
+  <div class="w-full max-w-md">
+
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <a href="index.html" class="font-display text-2xl text-floral-white hover:text-oxblood-700 transition-colors">MELLON FORGE</a>
+      <div class="mt-2" style="width:1px;height:24px;background:linear-gradient(to bottom,#580c07,transparent);margin:0 auto;"></div>
+    </div>
+
+    <!-- Card -->
+    <div class="panel">
+
+      <!-- Tabs -->
+      <div class="flex border-b border-shadow-grey-300">
+        <button class="tab active" id="tab-login" onclick="switchTab('login')">Accedi</button>
+        <button class="tab" id="tab-register" onclick="switchTab('register')">Registrati</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="form-login" class="p-8" onsubmit="handleLogin(event)">
+        <div class="mb-6">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Email</label>
+          <input type="email" id="login-email" class="field" placeholder="master@example.com" required>
+        </div>
+        <div class="mb-2">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Password</label>
+          <input type="password" id="login-password" class="field" placeholder="••••••••" required>
+        </div>
+        <p class="err" id="login-err"></p>
+        <div class="mt-8">
+          <button type="submit" class="btn-primary" id="login-btn">
+            <span id="login-label">Entra nel Tavolo</span>
+          </button>
+        </div>
+        <div class="orn mt-6"><span class="text-xs text-shadow-grey-600 font-heading tracking-wider">oppure</span></div>
+        <p class="text-center mt-4 text-sm text-shadow-grey-700">
+          Nuovo avventuriero? <button type="button" onclick="switchTab('register')" class="text-oxblood-700 hover:text-oxblood-600 underline">Crea account</button>
+        </p>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="form-register" class="p-8 hidden" onsubmit="handleRegister(event)">
+        <div class="mb-5">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Nome avventuriero</label>
+          <input type="text" id="reg-username" class="field" placeholder="Gandalf il Grigio" required minlength="3" maxlength="30">
+        </div>
+        <div class="mb-5">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Email</label>
+          <input type="email" id="reg-email" class="field" placeholder="avventuriero@example.com" required>
+        </div>
+        <div class="mb-2">
+          <label class="block font-heading text-xs tracking-wider uppercase text-shadow-grey-700 mb-2">Password</label>
+          <input type="password" id="reg-password" class="field" placeholder="Min. 8 caratteri" required minlength="8">
+        </div>
+        <p class="err" id="reg-err"></p>
+        <div class="mt-8">
+          <button type="submit" class="btn-primary" id="reg-btn">Inizia l'avventura</button>
+        </div>
+      </form>
+
+    </div>
+
+    <!-- Footer link -->
+    <p class="text-center mt-6 text-xs text-shadow-grey-600 font-heading tracking-wider">
+      <a href="index.html" class="hover:text-shadow-grey-800 transition-colors uppercase">← Torna alla home</a>
+    </p>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Check if already logged in
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await Auth.getUser();
+      if (user) window.location.href = 'campaigns.html';
+
+      // Check URL param ?mode=register
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('mode') === 'register') switchTab('register');
+    });
+
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-register').classList.toggle('active', !isLogin);
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-register').classList.toggle('hidden', isLogin);
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const err = document.getElementById('login-err');
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Accesso in corso…';
+      err.classList.remove('show');
+
+      const result = await Auth.login(email, password);
+      if (result.success) {
+        window.location.href = 'campaigns.html';
+      } else {
+        err.textContent = result.message || 'Credenziali non valide.';
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Entra nel Tavolo';
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn      = document.getElementById('reg-btn');
+      const err      = document.getElementById('reg-err');
+      const username = document.getElementById('reg-username').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Creazione account…';
+      err.classList.remove('show');
+
+      const result = await Auth.register(email, password, username);
+      if (result.success) {
+        window.location.href = 'campaigns.html';
+      } else {
+        err.textContent = result.message || 'Registrazione fallita.';
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Inizia l\'avventura';
+      }
+    }
+  </script>
+</body>
+</html>
