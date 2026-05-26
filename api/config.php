@@ -1,38 +1,21 @@
 <?php
 /**
  * MELLON FORGE VTT — api/config.php
- *
- * Le credenziali vengono lette dalle variabili d'ambiente di Railway.
- * NON scrivere mai i valori reali qui dentro — questo file è nel repo.
- * Imposta le variabili nella dashboard Railway → Variables.
+ * Autenticazione stateless via JWT — niente sessioni PHP.
  */
 
-// ── Credenziali Supabase ──────────────────────────────────────────────────
 define('SB_URL',         rtrim(getenv('SUPABASE_URL')         ?: '', '/'));
 define('SB_ANON_KEY',    getenv('SUPABASE_ANON_KEY')          ?: '');
 define('SB_SERVICE_KEY', getenv('SUPABASE_SERVICE_KEY')       ?: '');
 define('DESKTOP_API_KEY',getenv('DESKTOP_API_KEY')            ?: '');
 
-// Controllo di sicurezza: blocca se le variabili non sono configurate
 if (!SB_URL || !SB_SERVICE_KEY) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Configurazione server mancante. Imposta le variabili d\'ambiente su Railway.']);
+    echo json_encode(['success' => false, 'message' => 'Variabili d\'ambiente mancanti su Railway.']);
     exit;
 }
 
-// ── Sessione PHP ───────────────────────────────────────────────────────────
-if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params([
-        'lifetime' => 60 * 60 * 24 * 7,
-        'path'     => '/',
-        'secure'   => true,
-        'httponly' => true,
-        'samesite' => 'Strict',
-    ]);
-    session_start();
-}
-
-// ── CORS + Content-Type ────────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────────────────────
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: ' . (getenv('FRONTEND_URL') ?: '*'));
 header('Access-Control-Allow-Credentials: true');
@@ -44,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// ── Helper: leggi body JSON ────────────────────────────────────────────────
+// ── Helper: body JSON ─────────────────────────────────────────────────────
 function get_body(): array {
     static $body = null;
     if ($body === null) {
@@ -54,17 +37,16 @@ function get_body(): array {
     return $body;
 }
 
-// ── Helper: risposta JSON ──────────────────────────────────────────────────
+// ── Helper: risposte JSON ─────────────────────────────────────────────────
 function respond(bool $success, $data = null, string $message = '', int $code = 200): void {
     http_response_code($code);
     echo json_encode(['success' => $success, 'data' => $data, 'message' => $message]);
     exit;
 }
-
 function ok($data = null, string $msg = ''): void { respond(true,  $data, $msg, 200); }
 function err(string $msg, int $code = 400): void  { respond(false, null,  $msg, $code); }
 
-// ── Helper: richiesta HTTP a Supabase (REST) ───────────────────────────────
+// ── Helper: richiesta REST a Supabase ─────────────────────────────────────
 function sb_request(string $path, string $method = 'GET', array $body = [], array $headers = [], bool $service = true): array {
     $apiKey = $service ? SB_SERVICE_KEY : SB_ANON_KEY;
     $defaultHeaders = [
@@ -98,7 +80,7 @@ function sb_request(string $path, string $method = 'GET', array $body = [], arra
     ];
 }
 
-// ── Helper: Supabase Auth REST ─────────────────────────────────────────────
+// ── Helper: Supabase Auth REST ────────────────────────────────────────────
 function sb_auth(string $path, array $body): array {
     $ch = curl_init(SB_URL . '/auth/v1' . $path);
     curl_setopt_array($ch, [
@@ -114,35 +96,7 @@ function sb_auth(string $path, array $body): array {
     return ['ok' => $httpCode >= 200 && $httpCode < 300, 'code' => $httpCode, 'data' => json_decode($response, true)];
 }
 
-// ── Helper: utente dalla sessione PHP ─────────────────────────────────────
-function session_user(): ?array { return $_SESSION['mf_user'] ?? null; }
-
-function require_auth(): array {
-    $user = session_user();
-    if (!$user) err('Non autenticato.', 401);
-    return $user;
-}
-
-function require_gm(string $campaign_id): array {
-    $user = require_auth();
-    $res  = sb_request("/rest/v1/campaigns?id=eq.{$campaign_id}&select=id,gm_id");
-    if (!$res['ok'] || empty($res['data'])) err('Campagna non trovata.', 404);
-    if ($res['data'][0]['gm_id'] !== $user['id']) err('Solo il GM può eseguire questa azione.', 403);
-    return $user;
-}
-
-function require_participant(string $campaign_id): array {
-    $user = require_auth();
-    $uid  = $user['id'];
-    $res  = sb_request("/rest/v1/campaign_players?campaign_id=eq.{$campaign_id}&user_id=eq.{$uid}&select=role");
-    if (!$res['ok'] || empty($res['data'])) {
-        $camp = sb_request("/rest/v1/campaigns?id=eq.{$campaign_id}&gm_id=eq.{$uid}&select=id");
-        if (!$camp['ok'] || empty($camp['data'])) err('Non sei partecipante di questa campagna.', 403);
-    }
-    return $user;
-}
-
-// ── Helper: leggi Bearer token dall'header Authorization ──────────────────
+// ── Helper: Bearer token dall'header Authorization ────────────────────────
 function get_bearer_token(): ?string {
     $header = $_SERVER['HTTP_AUTHORIZATION']
            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
@@ -173,20 +127,39 @@ function get_user_from_token(): ?array {
     $data = json_decode($response, true);
     if (empty($data['id'])) return null;
 
-    // Recupera username dal profilo
-    $profile = sb_request("/rest/v1/users?id=eq.{$data['id']}&select=username,avatar_url");
+    $profile  = sb_request("/rest/v1/users?id=eq.{$data['id']}&select=username,avatar_url");
     $username = $profile['data'][0]['username'] ?? 'Unknown';
 
     return [
-        'id'       => $data['id'],
-        'email'    => $data['email'],
-        'username' => $username,
+        'id'         => $data['id'],
+        'email'      => $data['email'],
+        'username'   => $username,
+        'avatar_url' => $profile['data'][0]['avatar_url'] ?? null,
     ];
 }
 
-// ── Aggiorna require_auth per usare JWT ────────────────────────────────────
+// ── Auth guards ───────────────────────────────────────────────────────────
 function require_auth(): array {
     $user = get_user_from_token();
     if (!$user) err('Non autenticato.', 401);
+    return $user;
+}
+
+function require_gm(string $campaign_id): array {
+    $user = require_auth();
+    $res  = sb_request("/rest/v1/campaigns?id=eq.{$campaign_id}&select=id,gm_id");
+    if (!$res['ok'] || empty($res['data'])) err('Campagna non trovata.', 404);
+    if ($res['data'][0]['gm_id'] !== $user['id']) err('Solo il GM può eseguire questa azione.', 403);
+    return $user;
+}
+
+function require_participant(string $campaign_id): array {
+    $user = require_auth();
+    $uid  = $user['id'];
+    $res  = sb_request("/rest/v1/campaign_players?campaign_id=eq.{$campaign_id}&user_id=eq.{$uid}&select=role");
+    if (!$res['ok'] || empty($res['data'])) {
+        $camp = sb_request("/rest/v1/campaigns?id=eq.{$campaign_id}&gm_id=eq.{$uid}&select=id");
+        if (!$camp['ok'] || empty($camp['data'])) err('Non sei partecipante di questa campagna.', 403);
+    }
     return $user;
 }
