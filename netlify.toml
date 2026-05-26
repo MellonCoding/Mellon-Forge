@@ -29,7 +29,7 @@
 #    Sostituisci l'URL con quello del tuo servizio Railway
 [[redirects]]
   from   = "/api/*"
-  to     = "https://mellon-forge-api.up.railway.app"
+  to     = "mellon-forge-production.up.railway.app"
   status = 200
   force  = true
 
