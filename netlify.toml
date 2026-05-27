@@ -6,7 +6,7 @@
   publish = "."
 
   # Comando di build: compila Tailwind in produzione
-  command = "npm run build"
+  command = "bash build.sh"
 
 # ── Redirect: tutte le pagine HTML esistono già come file statici
 #    ma vogliamo che /login → login.html funzioni senza estensione

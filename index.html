@@ -219,5 +219,12 @@
     }, { threshold: 0.15 });
     document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
   </script>
+  <script src="js/config.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try { await initConfig(); }
+      catch (e) { console.error('Config error:', e); }
+    });
+  </script>
 </body>
 </html>

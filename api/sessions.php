@@ -38,11 +38,6 @@ if ($method === 'GET') {
     $session['active_map'] = $session['maps']        ?? null;
     unset($session['campaigns'], $session['maps']);
 
-    // Salva map_id in sessione PHP per controlli token
-    if ($session['active_map']) {
-        $_SESSION['mf_map_id'] = $session['active_map']['id'];
-    }
-
     ok($session);
 }
 

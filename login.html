@@ -131,6 +131,13 @@
   </div>
 
   <script src="js/config.js"></script>
+  <script>
+    // Carica configurazione dal backend prima di tutto
+    document.addEventListener('DOMContentLoaded', async () => {
+      try { await initConfig(); }
+      catch (e) { console.error('Config error:', e); }
+    });
+  </script>
   <script src="js/auth.js"></script>
   <script>
     // Check if already logged in

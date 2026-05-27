@@ -3,6 +3,9 @@
  */
 (async () => {
 
+  // ── INIT CONFIG ─────────────────────────────────────────────────
+  if (!CONFIG.SUPABASE_URL) await initConfig();
+
   // ── AUTH GUARD ──────────────────────────────────────────────────
   const user = await Auth.requireAuth();
   if (!user) return;
@@ -15,11 +18,12 @@
 
   // ── API HELPER ──────────────────────────────────────────────────
   const api = async (endpoint, method = 'GET', body = null) => {
-    const token = Auth.getToken();
     const opts = {
       method,
-      headers: { 'Content-Type': 'application/json' },
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + Auth.getToken()
+      }
     };
     if (body) opts.body = JSON.stringify(body);
     const r = await fetch(`${CONFIG.API_BASE}/${endpoint}`, opts);
@@ -30,7 +34,6 @@
   async function loadCampaigns() {
     const res = await api('campaigns.php');
     if (!res.success) { showToast(res.message || 'Errore caricamento', true); return; }
-
     allCampaigns = res.data || [];
     renderCampaigns();
   }
@@ -54,7 +57,7 @@
 
     campaigns.forEach(c => {
       const isGM   = c.gm_id === user.id;
-      const active = c.active;                   // bool column in campaigns table
+      const active = c.active;
 
       const card = document.createElement('div');
       card.className = 'campaign-card';
@@ -159,7 +162,6 @@
     }
   };
 
-  // Close modal clicking outside
   document.getElementById('modal-create').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });

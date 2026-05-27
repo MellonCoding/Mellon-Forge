@@ -1,26 +1,37 @@
 /**
- * MELLON FORGE — Configurazione
- * Sostituisci i valori con quelli del tuo progetto Supabase.
- * Dashboard → Settings → API
+ * MELLON FORGE — js/config.js
+ * Carica le variabili d'ambiente dal backend PHP a runtime.
+ * Nessun valore hardcoded.
  */
-const CONFIG = {
-  SUPABASE_URL:      'https://YOUR_PROJECT_ID.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR_ANON_KEY',
-  API_BASE:          '/api',    // PHP backend base path
 
-  // Chiave API per l'app desktop (stessa configurata in api/config.php)
-  // NON esporre la service role key qui — usarla solo nel backend PHP.
+const CONFIG = {
+  API_BASE:          '/api',
+  SUPABASE_URL:      null,
+  SUPABASE_ANON_KEY: null,
 };
 
-// Supabase JS client (usato solo per Realtime)
-// Importato via CDN in game.html
-let _supabaseClient = null;
+// Carica le env vars dal backend e inizializza il client Supabase
+async function initConfig() {
+  const res  = await fetch('/api/env.php').then(r => r.json());
+  if (!res.success) throw new Error('Impossibile caricare la configurazione dal server.');
+  CONFIG.SUPABASE_URL      = res.data.supabase_url;
+  CONFIG.SUPABASE_ANON_KEY = res.data.supabase_anon_key;
+}
 
+// Client Supabase per il Realtime (usato solo in game.js)
+let _supabaseClient = null;
 function getSupabaseClient() {
   if (!_supabaseClient) {
     _supabaseClient = supabase.createClient(
       CONFIG.SUPABASE_URL,
-      CONFIG.SUPABASE_ANON_KEY
+      CONFIG.SUPABASE_ANON_KEY,
+      {
+        auth: {
+          autoRefreshToken:   false,
+          persistSession:     false,
+          detectSessionInUrl: false,
+        }
+      }
     );
   }
   return _supabaseClient;

@@ -1,7 +1,5 @@
 /**
  * MELLON FORGE — Auth Module
- * Usa localStorage per persistere la sessione lato client.
- * Il token JWT viene inviato ad ogni chiamata API come header Authorization.
  */
 const Auth = (() => {
 
@@ -9,8 +7,10 @@ const Auth = (() => {
   const USER_KEY  = 'mf_user';
 
   // ── Helper API ─────────────────────────────────────────────────────────
-  const api = (endpoint, data) =>
-    fetch(`${CONFIG.API_BASE}/${endpoint}`, {
+  const api = async (endpoint, data) => {
+    // Assicura che la config sia caricata prima di fare chiamate
+    if (!CONFIG.SUPABASE_URL) await initConfig();
+    return fetch(`${CONFIG.API_BASE}/${endpoint}`, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
@@ -18,16 +18,19 @@ const Auth = (() => {
       },
       body: JSON.stringify(data)
     }).then(r => r.json());
+  }
 
   // ── LOGIN ──────────────────────────────────────────────────────────────
   async function login(email, password) {
     try {
       const res = await api('auth.php', { action: 'login', email, password });
-      if (res.success) {
-        localStorage.setItem(USER_KEY,  JSON.stringify(res.user));
-        localStorage.setItem(TOKEN_KEY, res.token);
+      if (res.success && res.data) {
+        // res.data.user e res.data.token — non res.user/res.token
+        localStorage.setItem(USER_KEY,  JSON.stringify(res.data.user));
+        localStorage.setItem(TOKEN_KEY, res.data.token);
+        return { success: true };
       }
-      return res;
+      return { success: false, message: res.message || 'Credenziali non valide.' };
     } catch (e) {
       return { success: false, message: 'Errore di connessione.' };
     }
@@ -37,11 +40,12 @@ const Auth = (() => {
   async function register(email, password, username) {
     try {
       const res = await api('auth.php', { action: 'register', email, password, username });
-      if (res.success) {
-        localStorage.setItem(USER_KEY,  JSON.stringify(res.user));
-        localStorage.setItem(TOKEN_KEY, res.token);
+      if (res.success && res.data) {
+        localStorage.setItem(USER_KEY,  JSON.stringify(res.data.user));
+        localStorage.setItem(TOKEN_KEY, res.data.token);
+        return { success: true };
       }
-      return res;
+      return { success: false, message: res.message || 'Registrazione fallita.' };
     } catch (e) {
       return { success: false, message: 'Errore di connessione.' };
     }
@@ -59,11 +63,13 @@ const Auth = (() => {
   async function getUser() {
     const cached = localStorage.getItem(USER_KEY);
     const token  = localStorage.getItem(TOKEN_KEY);
-    if (cached && token) {
-      try { return JSON.parse(cached); }
-      catch { localStorage.removeItem(USER_KEY); }
+    if (!cached || !token || cached === 'undefined' || token === 'undefined') {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      return null;
     }
-    return null;
+    try { return JSON.parse(cached); }
+    catch { localStorage.removeItem(USER_KEY); return null; }
   }
 
   // ── REQUIRE AUTH ──────────────────────────────────────────────────────
@@ -82,7 +88,7 @@ const Auth = (() => {
     return user && campaign && campaign.gm_id === user.id;
   }
 
-  // ── GET TOKEN (usato da campaigns.js e game.js per le chiamate API) ───
+  // ── GET TOKEN ─────────────────────────────────────────────────────────
   function getToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
   }

@@ -7,7 +7,13 @@
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const $ = id => document.getElementById(id);
 const api = async (endpoint, method = 'GET', body = null) => {
-  const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'include' };
+  const opts = {
+    method,
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': 'Bearer ' + (localStorage.getItem('mf_token') || '')
+    }
+  };
   if (body) opts.body = JSON.stringify(body);
   return fetch(`${CONFIG.API_BASE}/${endpoint}`, opts).then(r => r.json());
 };
@@ -350,6 +356,7 @@ const Game = (() => {
 
   // ── INIT ────────────────────────────────────────────────────────────────
   async function init() {
+    if (!CONFIG.SUPABASE_URL) await initConfig();
     currentUser = await Auth.requireAuth();
     if (!currentUser) return;
 
