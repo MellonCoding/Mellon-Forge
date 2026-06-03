@@ -93,7 +93,7 @@
               ${active ? 'Chiudi Sessione' : 'Avvia Sessione'}
             </button>` : ''}
           <button class="btn-enter" ${active ? '' : 'disabled'}
-            onclick="${active ? `enterSession('${c.id}','${c.active_session_id ?? ''}')` : ''}">
+            onclick="${active ? `enterSession('${c.id}')` : ''}">
             ${active ? '▶ Entra' : '⬡ In attesa'}
           </button>
         </div>`;
@@ -126,8 +126,15 @@
   };
 
   // ── ENTER SESSION ───────────────────────────────────────────────
-  window.enterSession = function(campaignId, sessionId) {
-    const params = new URLSearchParams({ campaign: campaignId, session: sessionId });
+  // FIX: invece di usare active_session_id (che potrebbe essere null),
+  // chiediamo al backend la sessione attiva della campagna al momento del click
+  window.enterSession = async function(campaignId) {
+    const res = await api(`sessions.php?campaign_id=${campaignId}`);
+    if (!res.success || !res.data?.id) {
+      showToast('Sessione non trovabile. Riprova.', true);
+      return;
+    }
+    const params = new URLSearchParams({ campaign: campaignId, session: res.data.id });
     window.location.href = `game.html?${params}`;
   };
 
