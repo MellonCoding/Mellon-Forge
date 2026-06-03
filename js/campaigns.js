@@ -66,8 +66,8 @@
           <div class="flex items-start justify-between gap-2 mb-3">
             <h3 style="font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.08em;color:#fff8f0;flex:1;">${escHtml(c.title)}</h3>
             ${active
-              ? `<span class="badge-active" style="flex-shrink:0;">⬡ Live</span>`
-              : `<span class="badge-waiting" style="flex-shrink:0;">In attesa</span>`}
+          ? `<span class="badge-active" style="flex-shrink:0;">⬡ Live</span>`
+          : `<span class="badge-waiting" style="flex-shrink:0;">In attesa</span>`}
           </div>
           <p style="font-size:.85rem;color:#6f6f85;line-height:1.5;margin-bottom:.75rem;min-height:2.5rem;">
             ${escHtml(c.description || '—')}
@@ -78,8 +78,8 @@
             </span>
             <span style="color:#1e1e24;">◆</span>
             ${isGM
-              ? `<span class="badge-gm">Game Master</span>`
-              : `<span class="badge-player">Giocatore</span>`}
+          ? `<span class="badge-gm">Game Master</span>`
+          : `<span class="badge-player">Giocatore</span>`}
           </div>
           ${isGM ? `
           <div style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:#474754;margin-top:.5rem;">
@@ -89,7 +89,7 @@
         <div style="padding:.75rem 1.25rem 1rem;border-top:1px solid #18181d;display:flex;gap:.5rem;align-items:center;justify-content:flex-end;">
           ${isGM ? `
             <button class="gm-btn" style="font-family:'Cinzel',serif;letter-spacing:.1em;text-transform:uppercase;font-size:.65rem;padding:.35rem .7rem;background:#1d0402;color:#f4857d;border:1px solid #3a0805;cursor:pointer;"
-              onclick="toggleSession('${c.id}', ${active})">
+              onclick="toggleSession('${c.id}', ${active ? 'true' : 'false'})">
               ${active ? 'Chiudi Sessione' : 'Avvia Sessione'}
             </button>` : ''}
           <button class="btn-enter" ${active ? '' : 'disabled'}
@@ -114,6 +114,9 @@
 
   // ── TOGGLE SESSION (GM only) ─────────────────────────────────────
   window.toggleSession = async function(campaignId, currently_active) {
+    // FIX: il valore arriva dall'onclick HTML come stringa, non come booleano
+    currently_active = currently_active === true || currently_active === 'true';
+
     const res = await api('sessions.php', 'POST', {
       action:      currently_active ? 'close' : 'open',
       campaign_id: campaignId

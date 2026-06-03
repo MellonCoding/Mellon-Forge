@@ -81,11 +81,24 @@ if ($method === 'POST') {
 
         $session = $sessRes['data'][0] ?? $sessRes['data'];
 
-        // Attiva il flag `active` sulla campagna
-        sb_request("/rest/v1/campaigns?id=eq.{$campId}", 'PATCH', [
-            'active'            => true,
-            'active_session_id' => $session['id'],    // colonna opzionale
-        ]);
+        // FIX: Attiva il flag `active` sulla campagna.
+        // active_session_id è opzionale: se la colonna non esiste nello schema
+        // Supabase restituisce un errore che ignoriamo, ma `active` viene comunque aggiornato.
+        $patchData = ['active' => true];
+        if (!empty($session['id'])) {
+            $patchData['active_session_id'] = $session['id'];
+        }
+
+        $patchRes = sb_request("/rest/v1/campaigns?id=eq.{$campId}", 'PATCH', $patchData);
+
+        // FIX: Se il PATCH fallisce per via di active_session_id (colonna mancante),
+        // ritenta con solo il campo `active` per garantire che la campagna si attivi.
+        if (!$patchRes['ok']) {
+            $retryRes = sb_request("/rest/v1/campaigns?id=eq.{$campId}", 'PATCH', ['active' => true]);
+            if (!$retryRes['ok']) {
+                err('Sessione creata ma errore nell\'attivazione della campagna: ' . ($retryRes['error'] ?? 'sconosciuto'));
+            }
+        }
 
         // Messaggio di sistema in chat
         sb_request('/rest/v1/chat_messages', 'POST', [
