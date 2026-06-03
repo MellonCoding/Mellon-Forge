@@ -38,7 +38,7 @@ const Hex = {
     const col = Math.floor((px - offset) / w);
     // Refine: check all neighbors
     const candidates = [[col, row],[col+1,row],[col-1,row],[col,row+1],[col,row-1],
-                        [col+1,row+1],[col-1,row+1],[col+1,row-1],[col-1,row-1]];
+      [col+1,row+1],[col-1,row+1],[col+1,row-1],[col-1,row-1]];
     let best = candidates[0], bestD = Infinity;
     for (const [c,r] of candidates) {
       const ctr = this.toPixel(c, r, s);
@@ -390,8 +390,9 @@ const Game = (() => {
       $('btn-end-session').classList.remove('hidden');
     }
 
-    // Init hex map
+    // FIX: salva il map_id globalmente prima di inizializzare HexMap e il realtime
     if (session.active_map) {
+      window._mapId = session.active_map.id;
       HexMap.init(session.active_map, tokRes.data || [], isGM);
     }
 
@@ -436,20 +437,20 @@ const Game = (() => {
     const sb = getSupabaseClient();
 
     realtimeChannel = sb
-      .channel(`session:${sessionId}`)
-      .on('postgres_changes', { event:'*', schema:'public', table:'tokens',
-            filter: `map_id=eq.${window._mapId}` },
-        payload => {
-          if (payload.eventType === 'DELETE') HexMap.removeToken(payload.old.id);
-          else HexMap.updateToken(payload.new);
-        })
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages',
-            filter: `session_id=eq.${sessionId}` },
-        payload => { appendMessage(payload.new); scrollChatBottom(); })
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'dice_rolls',
-            filter: `session_id=eq.${sessionId}` },
-        payload => { appendDiceRoll(payload.new); scrollChatBottom(); })
-      .subscribe();
+        .channel(`session:${sessionId}`)
+        .on('postgres_changes', { event:'*', schema:'public', table:'tokens',
+              filter: `map_id=eq.${window._mapId}` },
+            payload => {
+              if (payload.eventType === 'DELETE') HexMap.removeToken(payload.old.id);
+              else HexMap.updateToken(payload.new);
+            })
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages',
+              filter: `session_id=eq.${sessionId}` },
+            payload => { appendMessage(payload.new); scrollChatBottom(); })
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'dice_rolls',
+              filter: `session_id=eq.${sessionId}` },
+            payload => { appendDiceRoll(payload.new); scrollChatBottom(); })
+        .subscribe();
   }
 
   // ── CHAT ────────────────────────────────────────────────────────────────
@@ -550,10 +551,10 @@ const Game = (() => {
     if (!hex) { alert('Prima seleziona un esagono sulla mappa.'); return; }
 
     await api('tokens.php', 'POST', {
-      action:            'add',
-      map_id:            window._mapId,
-      hex_col:           hex.col,
-      hex_row:           hex.row,
+      action:             'add',
+      map_id:             window._mapId,
+      hex_col:            hex.col,
+      hex_row:            hex.row,
       label,
       visible_to_players: false
     });
@@ -568,7 +569,7 @@ const Game = (() => {
   return { init, sendMessage, rollDice, toggleFog, clearFog, addNPCToken, endSession };
 })();
 
-// ── HELPERS exposd to HTML ─────────────────────────────────────────────────
+// ── HELPERS exposed to HTML ────────────────────────────────────────────────
 function setDiceExpr(expr) { $('dice-expr-input').value = expr; }
 
 function setTool(tool) {
