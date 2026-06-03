@@ -131,7 +131,7 @@
   window.enterSession = async function(campaignId) {
     const res = await api(`sessions.php?campaign_id=${campaignId}`);
     if (!res.success || !res.data?.id) {
-      showToast('Sessione non trovabile. Riprova.', true);
+      showToast(res.message || 'Sessione non trovabile. Riprova.', true);
       return;
     }
     const params = new URLSearchParams({ campaign: campaignId, session: res.data.id });

@@ -33,7 +33,13 @@ if ($method === 'GET') {
 
         if (!$res['ok'] || empty($res['data'])) err('Sessione attiva non trovata.', 404);
 
-        $session = $res['data'][0];
+        $session = is_array($res['data']) && isset($res['data'][0]) ? $res['data'][0] : $res['data'];
+        
+        if (!$session || !is_array($session) || empty($session['id'])) {
+            error_log('sessions GET error: session data invalid or id missing. ' . json_encode($session));
+            err('Dati sessione non validi.', 500);
+        }
+
         $session['campaign']   = $session['campaigns'] ?? null;
         $session['active_map'] = $session['maps']      ?? null;
         unset($session['campaigns'], $session['maps']);
