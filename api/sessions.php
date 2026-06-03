@@ -13,9 +13,35 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // ── GET ───────────────────────────────────────────────────────────────────
 if ($method === 'GET') {
-    $user      = require_auth();
-    $sessionId = $_GET['session_id'] ?? '';
-    if (!$sessionId) err('session_id mancante.');
+    $user       = require_auth();
+    $sessionId  = $_GET['session_id']  ?? '';
+    $campaignId = $_GET['campaign_id'] ?? '';
+
+    // ── GET per campaign_id: ritorna la sessione attiva ───────────────────
+    if ($campaignId && !$sessionId) {
+        require_participant($campaignId);
+
+        $res = sb_request(
+            "/rest/v1/sessions?campaign_id=eq.{$campaignId}&status=eq.active&select=" . urlencode(
+                'id,title,status,started_at,campaign_id,active_map_id,' .
+                'campaigns(id,title,gm_id,system),' .
+                'maps!sessions_active_map_id_fkey(id,title,cols,rows,hex_size,background_url,fog_of_war)'
+            ) . '&order=started_at.desc&limit=1'
+        );
+
+        if (!$res['ok'] || empty($res['data'])) {
+            err('Nessuna sessione attiva trovata per questa campagna.', 404);
+        }
+
+        $session = $res['data'][0];
+        $session['campaign']   = $session['campaigns'] ?? null;
+        $session['active_map'] = $session['maps']      ?? null;
+        unset($session['campaigns'], $session['maps']);
+        ok($session);
+    }
+
+    // ── GET per session_id: dettaglio sessione ────────────────────────────
+    if (!$sessionId) err('session_id o campaign_id mancante.');
 
     // Recupera sessione con mappa e campagna
     $res = sb_request(
