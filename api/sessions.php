@@ -2,8 +2,7 @@
 /**
  * MELLON FORGE — api/sessions.php
  *
- * GET  /sessions.php?session_id=UUID    → dettaglio sessione (mappa + campagna)
- * GET  /sessions.php?campaign_id=UUID   → sessione attiva della campagna (per enterSession)
+ * GET  /sessions.php?session_id=UUID   → dettaglio sessione (mappa + campagna)
  * POST /sessions.php {action:'open',  campaign_id, title?, map_id?}
  * POST /sessions.php {action:'close', campaign_id}
  * POST /sessions.php {action:'create_map', campaign_id, title, cols, rows, hex_size, background_url?}
@@ -15,41 +14,10 @@ $method = $_SERVER['REQUEST_METHOD'];
 // ── GET ───────────────────────────────────────────────────────────────────
 if ($method === 'GET') {
     $user      = require_auth();
-    $sessionId  = $_GET['session_id']  ?? '';
-    $campaignId = $_GET['campaign_id'] ?? '';
+    $sessionId = $_GET['session_id'] ?? '';
+    if (!$sessionId) err('session_id mancante.');
 
-    // ── FIX: GET per campaign_id → restituisce la sessione attiva ──────────
-    if ($campaignId && !$sessionId) {
-        // Verifica che l'utente sia partecipante
-        require_participant($campaignId);
-
-        $res = sb_request(
-            "/rest/v1/sessions?campaign_id=eq.{$campaignId}&status=eq.active&select=" . urlencode(
-                'id,title,status,started_at,campaign_id,active_map_id,' .
-                'campaigns(id,title,gm_id,system),' .
-                'maps!sessions_active_map_id_fkey(id,title,cols,rows,hex_size,background_url,fog_of_war)'
-            ) . '&order=started_at.desc&limit=1'
-        );
-
-        if (!$res['ok'] || empty($res['data'])) err('Sessione attiva non trovata.', 404);
-
-        $session = is_array($res['data']) && isset($res['data'][0]) ? $res['data'][0] : $res['data'];
-        
-        if (!$session || !is_array($session) || empty($session['id'])) {
-            error_log('sessions GET error: session data invalid or id missing. ' . json_encode($session));
-            err('Dati sessione non validi.', 500);
-        }
-
-        $session['campaign']   = $session['campaigns'] ?? null;
-        $session['active_map'] = $session['maps']      ?? null;
-        unset($session['campaigns'], $session['maps']);
-
-        ok($session);
-    }
-
-    // ── GET per session_id → dettaglio sessione (comportamento originale) ──
-    if (!$sessionId) err('session_id o campaign_id mancante.');
-
+    // Recupera sessione con mappa e campagna
     $res = sb_request(
         "/rest/v1/sessions?id=eq.{$sessionId}&select=" . urlencode(
             'id,title,status,started_at,campaign_id,' .
@@ -65,6 +33,7 @@ if ($method === 'GET') {
     // Verifica partecipazione
     require_participant($session['campaign_id']);
 
+    // Rinomina FK annidate per comodità nel frontend
     $session['campaign']   = $session['campaigns']  ?? null;
     $session['active_map'] = $session['maps']        ?? null;
     unset($session['campaigns'], $session['maps']);
@@ -113,15 +82,7 @@ if ($method === 'POST') {
         $session = $sessRes['data'][0] ?? $sessRes['data'];
 
         // Attiva il flag `active` sulla campagna
-        // FIX: tentiamo prima con active_session_id, se fallisce ritentiamo senza
-        $patchData = ['active' => true];
-        if (!empty($session['id'])) {
-            $patchData['active_session_id'] = $session['id'];
-        }
-        $patchRes = sb_request("/rest/v1/campaigns?id=eq.{$campId}", 'PATCH', $patchData);
-        if (!$patchRes['ok']) {
-            sb_request("/rest/v1/campaigns?id=eq.{$campId}", 'PATCH', ['active' => true]);
-        }
+        sb_request("/rest/v1/campaigns?id=eq.{$campId}", 'PATCH', ['active' => true]);
 
         // Messaggio di sistema in chat
         sb_request('/rest/v1/chat_messages', 'POST', [

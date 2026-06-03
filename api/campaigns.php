@@ -26,7 +26,7 @@ if ($method === 'GET') {
 
         $res = sb_request(
             "/rest/v1/campaigns?id=eq.{$id}&select=" . urlencode(
-                'id,title,description,system,status,active,gm_id,created_at,' .
+                'id,title,description,system,status,gm_id,created_at,' .
                 'campaign_players(user_id,role,users(id,username,avatar_url))'
             )
         );
@@ -38,7 +38,7 @@ if ($method === 'GET') {
     // Subcampaign come GM
     $gmRes = sb_request(
         "/rest/v1/campaigns?gm_id=eq.{$uid}&select=" . urlencode(
-            'id,title,description,system,status,active,gm_id,created_at,' .
+            'id,title,description,system,status,gm_id,created_at,' .
             'sessions(id,status,active_map_id)'
         ) . '&status=neq.archived&order=created_at.desc'
     );
@@ -46,7 +46,7 @@ if ($method === 'GET') {
     // Campagne come giocatore
     $cpRes = sb_request(
         "/rest/v1/campaign_players?user_id=eq.{$uid}&select=" . urlencode(
-            'role,campaigns(id,title,description,system,status,active,gm_id,created_at,' .
+            'role,campaigns(id,title,description,system,status,gm_id,created_at,' .
             'sessions(id,status,active_map_id))'
         )
     );
@@ -55,9 +55,10 @@ if ($method === 'GET') {
 
     if ($gmRes['ok']) {
         foreach ($gmRes['data'] as $c) {
-            $c['my_role']         = 'gm';
+            $c['my_role']           = 'gm';
             $c['active_session_id'] = _active_session($c['sessions'] ?? []);
-            $c['player_count']    = _count_players($c['id']);
+            $c['active']            = !empty($c['active_session_id']);
+            $c['player_count']      = _count_players($c['id']);
             unset($c['sessions']);
             $campaigns[$c['id']] = $c;
         }
@@ -68,8 +69,9 @@ if ($method === 'GET') {
             $c = $row['campaigns'] ?? null;
             if (!$c) continue;
             if (isset($campaigns[$c['id']])) continue; // già come GM
-            $c['my_role']         = $row['role'];
+            $c['my_role']           = $row['role'];
             $c['active_session_id'] = _active_session($c['sessions'] ?? []);
+            $c['active']            = !empty($c['active_session_id']);
             unset($c['sessions']);
             $campaigns[$c['id']] = $c;
         }
